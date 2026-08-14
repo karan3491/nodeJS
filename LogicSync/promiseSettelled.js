@@ -1,24 +1,45 @@
-const arr=[Promise.resolve(1),Promise.reject('err'),Promise.resolve(3),Promise.reject(4), 42];
+function myPromiseSettled(promises) {
+    return new Promise((resolve) => {
+        if (promises.length === 0) {
+            return resolve([]);
+        }
 
-function allPromise(promise){
-    return new Promise((resolve,reject)=> {
-        const result=[];
-        let count=0;
-        promise.forEach((p,i)=>{
-            Promise.resolve(p).then((val)=>{
-                  result[i]= { status: "fulfilled", val };
-            }).catch((err)=>{
-                result[i]= { status: "rejected", err }
-            }).finally(()=>{
-                count++;
-                if(count === promise.length)
-                resolve(result);
-            })
-           
-        })
-    })
-    
-    
+        const results = [];
+        let count = 0;
+
+        promises.forEach((promise, index) => {
+            Promise.resolve(promise)
+                .then((value) => {
+                    results[index] = {
+                        status: "fulfilled",
+                        value
+                    };
+                })
+                .catch((reason) => {
+                    results[index] = {
+                        status: "rejected",
+                        reason
+                    };
+                })
+                .finally(() => {
+                    count++;
+
+                    if (count === promises.length) {
+                        resolve(results);
+                    }
+                });
+        });
+    });
 }
 
-allPromise(arr).then((res)=>{console.log("res",res)})
+
+const promises = [
+    Promise.resolve("A"),
+    Promise.reject("Error"),
+    Promise.resolve("C")
+];
+
+myPromiseSettled(promises).then(console.log);
+// output:  [{ status: 'fulfilled', value: 'A' },{ status: 'rejected', reason: 'Error' },{ status: 'fulfilled', value: 'C' }]
+// Notice that the result order remains the same as the input order, even if the promises finish in a different order.
+
