@@ -1,78 +1,65 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// For Promise.all(), we should resolve only when all promises are completed successfully.
 
 function myPromiseAll(promises) {
-  return new Promise((resolve, reject) => {
-    if (promises.length === 0) return resolve([]);
+    return new Promise((resolve, reject) => {
+        if (promises.length === 0) {
+            return resolve([]);
+        }
 
-    let results = [];
-    let count = 0;
+        const results = [];
+        let count = 0;
 
-    promises.forEach((p, i) => {
-      Promise.resolve(p)
-        .then(res => {
+        promises.forEach((promise, index) => {
+            Promise.resolve(promise)
+                .then((result) => {
+                    results[index] = result;
+                    count++;
 
-          results[i] = res;
-          resolve(results);
-          
-        }).catch(reject)
-         Promise.reject(p).then((err)=>{
-             results[i] = err;
-          reject(results);
-         }).catch(reject)
-       
+                    if (count === promises.length) {
+                        resolve(results);
+                    }
+                })
+                .catch(reject);
+        });
     });
-  });
 }
 
-myPromiseAll([Promise.resolve(1), Promise.resolve(3), Promise.reject('erro')]).then((res)=> console.log(res)).catch((err)=> console.log(err))
+// Important: Order is preserved
+// Even if promises finish in a different order:
+
+const p1 = new Promise(resolve =>
+    setTimeout(() => resolve("A"), 3000)
+);
+
+const p2 = new Promise(resolve =>
+    setTimeout(() => resolve("B"), 1000)
+);
+
+const p3 = new Promise(resolve =>
+    setTimeout(() => resolve("C"), 2000)
+);
+
+myPromiseAll([p1, p2, p3])
+    .then(console.log);
+
+// Execution order:
+# B → C → A
+// output is:
+# ["A", "B", "C"]
+
+// Why => because you're doing:
+# results[index] = result;  // The index is what preserves the original order.
 
 
+// One more important improvement
+// Your parameter is called promises, but Promise.all() can also accept normal values:
 
+Promise.all([
+    Promise.resolve(10),
+    20,
+    "hello",
+    Promise.resolve(40)
+]);
 
-
-
-
-// Promise
-
-const funPromise=(arr)=>{
-    return new Promise((resolve, reject)=>{
-        if(arr.length ===0) return resolve([]);
-        let result=[];
-        let count=0;
-        arr.forEach((p,i)=>{
-            Promise.resolve(p).then((r)=>{
-             result[i]= r;
-             count++;
-             if(count === arr.length) resolve(result)
-             
-            }
-            ).catch((e)=> reject)
-        })
-    })
-}
-
-funPromise([Promise.resolve(1), Promise.resolve(3)]).then((res)=> {console.log(res)}).catch((e)=>{ console.log(e)})
-
+promise.then((val)=> console.log(val));
+// output: [ 10, 20, 'hello', 40 ]
